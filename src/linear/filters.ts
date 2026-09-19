@@ -34,6 +34,34 @@ export const CLOSED_STATES = ["Done", "Canceled", "Duplicate"] as const;
 
 export const IN_REVIEW = "In Review";
 
+/**
+ * A deferral *statement* under Goal, as the plan writes it: a sentence that
+ * starts with "Deferred" ("Deferred to v0.2 by the Execution Schedule …",
+ * "Deferred; nothing waits on it.") or the phrase "deferred to v0.<n>" /
+ * "deferred until …". A Goal that merely mentions the word ("the v0.2
+ * deferred set", "what is deferred") is not a deferral: PAP-695 and PAP-701
+ * were skipped as deferred by the looser `\bdeferred\b` check on live data.
+ */
+const DEFERRAL_SENTENCE_RE = /(?:^|[.;:!?]\s+)Deferred\b/m; // case-sensitive: a sentence, not the word
+const DEFERRAL_PHRASE_RE = /\bdeferred (?:to v\d|until\b)/i;
+
+/** The body of the Goal section (up to the next section heading), or undefined. */
+export function goalSection(description: string): string | undefined {
+  const lines = description.split(/\r?\n/);
+  const isHeading = (l: string) => /^\s*(?:\*\*[^*]+\*\*\s*:?|#{1,3}\s+\S.*)\s*$/.test(l);
+  const start = lines.findIndex((l) =>
+    /^\s*(?:\*\*\s*Goal\s*\*\*\s*:?|#{1,3}\s+Goal)\s*$/i.test(l),
+  );
+  if (start < 0) return undefined;
+  const body: string[] = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    if (isHeading(line)) break;
+    body.push(line);
+  }
+  return body.join("\n").trim();
+}
+
 /** The `Deferred` label, or a deferral note under Goal (PAP-92 deferred rule). */
 export function isDeferred(
   issue: Pick<IssueNode, "labels"> & { description?: string | null },
@@ -41,10 +69,9 @@ export function isDeferred(
   if (issue.labels.nodes.some((l) => l.name === DEFERRED_LABEL)) return true;
   const description = issue.description;
   if (!description) return false;
-  const goal = /^\s*\*{0,2}Goal\*{0,2}\s*$/im.exec(description);
+  const goal = goalSection(description);
   if (!goal) return false;
-  const after = description.slice(goal.index, goal.index + 600);
-  return /\bdeferred\b/i.test(after);
+  return DEFERRAL_SENTENCE_RE.test(goal) || DEFERRAL_PHRASE_RE.test(goal);
 }
 
 /** An issue with sub-issues is an umbrella: never claimed, never promoted
