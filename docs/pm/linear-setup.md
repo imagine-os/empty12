@@ -49,14 +49,24 @@ spec names this as the one team-setting surface this script owns.
 (low/medium/high/max), `Chunk` (1-5, v0.2), plus the workspace labels Bug,
 Feature, Improvement, and `Deferred`.
 
-### Ungrouped surface labels (deliberate)
+### Surface labels (live: grouped under `Surface`)
 
-`Customer`, `Staff`, `Developer`, `Agent` are **ungrouped**, plus an empty
-`Surface` group label. This is intentional, not a gap: Linear allows only
-one label per group on an issue, and 53 issues carry more than one surface
-(e.g. both `Staff` and `Developer`). Grouping them would silently drop
-labels the next time someone edited an issue in the Linear UI. The empty
-`Surface` group label is kept as a heading only.
+`Customer`, `Staff`, `Developer` and `Agent` are children of the `Surface`
+group label in the live team, and `linear-workspace.json` keys them
+`Surface/Customer` … `Surface/Agent` accordingly. Consumers (PAP-93, PAP-96,
+PAP-99) must use the grouped keys, not the bare names.
+
+`src/linear/desired.ts` does **not** declare these labels, so this script
+never creates, moves or reparents them — they are read as a live fact, and a
+change to their shape is reported as drift, never "corrected". The PAP-91
+spec's premise (surfaces ungrouped, with 53 issues carrying more than one
+surface) was true of the 2026-09-18 plan snapshot and is no longer true of the
+live workspace: a sample of 250 team-PAP issues on 2026-09-19 found **zero**
+issues carrying more than one surface label, which is what a group constraint
+forces (Linear allows one label per group per issue). Whoever grouped them is
+outside this issue's history; if the multi-surface information mattered, it
+needs recovering from Linear's issue history, which is tracked as a follow-up
+rather than silently re-created here.
 
 ### Added by PAP-91: `Character`
 
@@ -109,6 +119,20 @@ match their documented shape (see `docs/linear-features.md` in
 * Writes `linear-workspace.json` with every state/label/template/
   project/cycle id, which `src/linear/workspace.ts::WorkspaceIds` types and
   downstream code (`src/loop.ts` and later PAP-93/96/99) imports.
+
+## Running the script in an agent sandbox
+
+`@linear/sdk` uses Node's global `fetch`, which ignores `HTTPS_PROXY` unless
+the env-proxy agent is turned on. In a Claude Code sandbox the request then
+goes out directly, the proxy never injects the real API key, and the run dies
+with `Authentication required, not authenticated`. Run it as:
+
+```sh
+NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt \
+  LINEAR_API_KEY=placeholder pnpm linear:configure --check
+```
+
+Verified 2026-09-19: prints `Team PAP (...)` then `(no drift)` and exits 0.
 
 ## Follow-up not done in this session
 

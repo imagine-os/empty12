@@ -13,3 +13,7 @@ as correct. Zero destructive operations are possible by construction
 Paths: `ops/linear/`, `src/linear/`, `src/cli/`, `src/db/`, `src/session/`,
 `src/loop.ts`, `linear-workspace.json`, `docs/pm/linear-setup.md`,
 `docs/reference/surfaces.md`, `tests/`, root scaffold files.
+- Review pass (PAP-91): corrected `docs/pm/linear-setup.md` — the four surface labels are live
+  children of the `Surface` group (`linear-workspace.json` already keys them `Surface/*`), not
+  ungrouped; documented the `NODE_USE_ENV_PROXY=1` requirement for running `--check` in an agent
+  sandbox.
