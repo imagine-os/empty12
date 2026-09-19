@@ -10,8 +10,12 @@
  */
 import schema from "./session-footer.schema.json" with { type: "json" };
 
-/** Bump only when a footer field is added, removed or renamed. */
-export const PLAYBOOK_VERSION = 1 as const;
+/** Footers a session writes today use this. Both 1 and 2 still validate (see PLAYBOOK_VERSIONS); bump only when a field is added, removed or renamed. */
+export const PLAYBOOK_VERSION = 2 as const;
+
+/** Every playbookVersion the schema still accepts. */
+export const PLAYBOOK_VERSIONS = [1, 2] as const;
+export type PlaybookVersion = (typeof PLAYBOOK_VERSIONS)[number];
 
 /** The fence language every footer block uses. */
 export const FOOTER_FENCE = "paperos-session" as const;
@@ -29,6 +33,10 @@ export const CHARACTERS = [
 ] as const;
 export type Character = (typeof CHARACTERS)[number];
 
+/** Non-lead roles that also post footers: the promotion pass, the merge-queue integrator and housekeeping/remediation passes (PAP-92). */
+export const FOOTER_ROLES = ["orchestrator", "integrator", "scribe"] as const;
+export type FooterRole = (typeof FOOTER_ROLES)[number];
+
 export const SESSION_STATUSES = [
   "started",
   "progress",
@@ -36,9 +44,17 @@ export const SESSION_STATUSES = [
   "partial",
   "contract-failed",
   "handoff",
+  "review",
+  "reviewed",
   "promoted",
+  "integrated",
+  "remediation",
 ] as const;
 export type SessionStatus = (typeof SESSION_STATUSES)[number];
+
+/** The review pass's outcome; required when `status` is `review` or `reviewed`. */
+export const VERDICTS = ["pass", "fail"] as const;
+export type Verdict = (typeof VERDICTS)[number];
 
 /** Owned by PAP-108 (HandoffSchema); mirrored here until handoff.schema.json lands. */
 export interface Handoff {
@@ -58,14 +74,18 @@ export interface Handoff {
 }
 
 export interface SessionFooter {
-  playbookVersion: typeof PLAYBOOK_VERSION;
+  playbookVersion: PlaybookVersion;
   /** `<yyyy-mm-dd>-PAP-<n>` with an optional `-<k>` re-run suffix. */
   sessionId: string;
-  character: Character | "orchestrator";
+  /** Case-insensitive: either casing of a lead name validates. */
+  character: Character | Capitalize<Character> | FooterRole;
   /** `PAP-<n>` */
   issue: string;
   status: SessionStatus;
-  branch: string;
+  /** Required only on started/progress/ended/partial; absent on review/reviewed/promoted/integrated/remediation. */
+  branch?: string;
+  /** Required when `status` is `review` or `reviewed`. */
+  verdict?: Verdict;
   /** Model id, e.g. `claude-fable-5-1`. */
   model?: string;
   costUsd?: number;

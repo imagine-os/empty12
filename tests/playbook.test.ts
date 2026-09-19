@@ -1,7 +1,11 @@
 /**
- * PAP-92 test plan: ajv over 10 valid and 10 invalid footers (two valid ones
- * carry baseBranches), the playbook word count (1500-2500), every relative link
- * in the playbook resolves, and the dry run yields three parseable comments.
+ * PAP-92 test plan: ajv over at least 10 valid and 10 invalid footers (two
+ * valid ones carry baseBranches, and the v2 schema fixtures cover
+ * playbookVersion 1 and 2, case-insensitive character, the review/reviewed
+ * verdict requirement, and the integrator/remediation statuses), the playbook
+ * word count (1500-2500), every absolute-GitHub-URL link in the playbook
+ * resolving to a real local path, and the dry run yielding three parseable
+ * comments.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -22,6 +26,11 @@ const base: SessionFooter = {
   status: "started",
   branch: "feat/PAP-92-session-playbook",
 };
+
+function omitBranch<T extends { branch?: unknown }>(f: T): Omit<T, "branch"> {
+  const { branch: _b, ...rest } = f;
+  return rest;
+}
 
 const handoff: NonNullable<SessionFooter["handoff"]> = {
   kind: "build-to-review",
@@ -66,11 +75,39 @@ const valid: [string, unknown][] = [
     "promoted by orchestrator",
     { ...base, character: "orchestrator", status: "promoted", sessionId: "2026-09-19-PAP-92-2" },
   ],
+  [
+    "the build loop's review footer (playbookVersion 1, capitalised character, no branch)",
+    {
+      playbookVersion: 1,
+      sessionId: "2026-09-18-PAP-13",
+      character: "Sentinel",
+      issue: "PAP-13",
+      status: "review",
+      verdict: "pass",
+      model: "claude-opus-5",
+    },
+  ],
+  ["reviewed with a failing verdict", omitBranch({ ...base, status: "reviewed", verdict: "fail" })],
+  [
+    "integrated by the merge-queue integrator",
+    {
+      character: "integrator",
+      issue: "PAP-92",
+      playbookVersion: PLAYBOOK_VERSION,
+      sessionId: "2026-09-19-PAP-92-3",
+      status: "integrated",
+      commits: ["0123abc"],
+    },
+  ],
+  [
+    "remediation by scribe (housekeeping pass, playbookVersion 2)",
+    omitBranch({ ...base, character: "scribe", status: "remediation" }),
+  ],
 ];
 
 const invalid: [string, unknown][] = [
-  ["wrong playbookVersion", { ...base, playbookVersion: 2 }],
-  ["missing branch", (({ branch: _b, ...rest }) => rest)(base)],
+  ["unsupported playbookVersion", { ...base, playbookVersion: 3 }],
+  ["missing branch on started", omitBranch(base)],
   ["unknown status", { ...base, status: "done" }],
   ["unknown character", { ...base, character: "gandalf" }],
   ["bad issue identifier", { ...base, issue: "ENG-92" }],
@@ -85,6 +122,9 @@ const invalid: [string, unknown][] = [
     "handoff open question without default",
     { ...base, status: "handoff", handoff: { ...handoff, openQuestions: [{ q: "?" }] } },
   ],
+  ["review without verdict", omitBranch({ ...base, status: "review" })],
+  ["reviewed without verdict", omitBranch({ ...base, status: "reviewed" })],
+  ["unknown verdict value", omitBranch({ ...base, status: "review", verdict: "maybe" })],
 ];
 
 describe("session footer schema", () => {
@@ -116,13 +156,19 @@ describe("playbook document", () => {
     expect(words.length).toBeLessThanOrEqual(2500);
   });
 
-  it("resolves every relative link", () => {
+  it("resolves every in-repo link (absolute GitHub blob URL, so the byte-identical template mirror resolves too)", () => {
+    const repoBase = "https://github.com/imagine-os/empty12/blob/main/";
     const links = [...md.matchAll(/\]\(([^)#\s]+)(#[^)]*)?\)/g)].map((m) => m[1] ?? "");
-    const relative = links.filter((l) => l !== "" && !/^[a-z]+:/i.test(l));
-    expect(relative.length).toBeGreaterThan(0);
-    for (const l of relative) {
-      expect(existsSync(resolve(dirname(playbookPath), l)), `broken link ${l}`).toBe(true);
+    const githubFileLinks = links.filter((l) => l.startsWith(repoBase));
+    expect(githubFileLinks.length).toBeGreaterThan(0);
+    for (const l of githubFileLinks) {
+      const localPath = l.slice(repoBase.length);
+      expect(existsSync(resolve(root, localPath)), `broken link ${l}`).toBe(true);
     }
+    // No bare relative link should remain: every in-repo reference is now an absolute GitHub URL,
+    // so it resolves the same way from docs/pm/ here and from .claude/rules/ in the template mirror.
+    const relative = links.filter((l) => l !== "" && !/^[a-z]+:/i.test(l));
+    expect(relative).toEqual([]);
   });
 
   it("carries the umbrella, promotion and deferred rules and the build-loop section", () => {
