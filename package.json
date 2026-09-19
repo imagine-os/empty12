@@ -1,0 +1,30 @@
+{
+  "name": "paperos-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PaperOS build-loop orchestrator: Linear workspace-as-code, the claim/promote loop, and agent session plumbing.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "linear:configure": "tsx ops/linear/configure-workspace.ts"
+  },
+  "dependencies": {
+    "@linear/sdk": "^39.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
