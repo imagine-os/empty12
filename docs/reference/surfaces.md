@@ -48,3 +48,36 @@ Append a section here for any MCP, CLI or API ability your issue adds
 * **API**: reads issues (with `inverseRelations`, `children`, `labels`,
   `attachments`) over Linear GraphQL, 100 per page; writes `issueUpdate`,
   `issueAddLabel`, `commentCreate` from the webhook path only.
+## PAP-281: the orchestrator claim loop
+
+* **CLI**: `pnpm orchestrator:loop [--apply] [--watch]` —
+  `src/cli/loop.ts`. Without `--apply` it is read-only: it polls
+  `Ready for Claude` on team PAP and prints the queue with a `claimable` or
+  `skip (<reason>)` verdict per issue, writing nothing. `--apply` runs one
+  cycle (claim up to `maxParallel`, launch, run registered passes);
+  `--watch` keeps cycling at `pollIntervalMs` and serves the HTTP endpoints.
+  Exit 0 ran, 2 Linear unreachable.
+* **CLI**: `pnpm orchestrator:status [--json]` — `src/cli/status.ts`. Prints
+  the claims and sessions the loop currently holds, plus whether PAP-93's
+  validator is available. Never calls Linear, so it is safe against a live
+  deployment. Exit 0 printed, 2 the database could not be opened.
+* **HTTP API**: `GET /healthz` → `{ ok, at }`; `GET /status` →
+  `StatusPayload` (mode, team, uptime, slots, claims, sessions, registered
+  passes, validator availability, last 20 events). `src/http.ts`, bound to
+  `http.host`/`http.port` from `orchestrator.config.yaml`
+  (`127.0.0.1:8787` by default). Read-only; `POST` answers 405. PAP-283
+  deploys it, PAP-113 renders it.
+* **API (outbound)**: Linear GraphQL — `issues` (poll), `issue` (pre-claim
+  re-read), `issueUpdate` (claim and transitions), `commentCreate`
+  (`linearComment`), `attachmentLinkURL` (PR attachment, `pr-flow` only),
+  `issueLabelCreate` (`retry-<n>`). No deletes, no archives, no renames, and
+  no path to `Done`.
+* **Module API**: `claimNext(deps, character?)`, `release`,
+  `recoverClaims`, `toInReview`, `retry`, `escalate`, `linearComment`,
+  `createLoop().registerPass(name, fn)`, the `SessionLauncher` port with
+  `DryRunLauncher`, the typed `EventBus`
+  (`issue.claimed | issue.released | issue.promoted | issue.escalated |
+  issue.retried | issue.in_review | session.started | session.ended |
+  pr.detected | loop.error | loop.cycle`), and the tables `sessions`,
+  `claims`, `events`, `comments_sent`, `promotions`, `retries`.
+* **MCP**: none added by this issue.

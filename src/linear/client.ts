@@ -28,8 +28,8 @@ export async function rawRequestWithRetry<T>(
   client: LinearClient,
   query: string,
   variables?: Record<string, unknown>,
-  maxAttempts = 5,
-  sleepMs = (_attempt: number) => 60_000,
+  maxAttempts: number = 5,
+  sleepMs: (attempt: number) => number = () => 60_000,
 ): Promise<T> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

@@ -1,12 +1,12 @@
 /**
- * Builder-session plumbing (PAP-96/PAP-99): spawning a Claude Code session
- * per claimed issue, worktree setup, and reporting back to Linear.
- *
- * Stub only.
+ * Builder-session plumbing. PAP-281 ships the `SessionLauncher` port and the
+ * dry-run implementation; PAP-282 adds the worktree lifecycle and the real
+ * Claude Code launch, PAP-704 the model routing, PAP-99 the scheduling.
  */
 
-// TODO(PAP-96): spawn a session per claimed issue (worktree, branch, model
-// routing from the issue's Model/Reasoning-effort labels).
-// TODO(PAP-99): Character routing (map `Character/<Name>` label -> agent).
-
-export {};
+export {
+  DryRunLauncher,
+  type LaunchContext,
+  type LaunchResult,
+  type SessionLauncher,
+} from "./launcher.js";

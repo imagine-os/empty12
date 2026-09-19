@@ -20,10 +20,14 @@
     "footer:validate": "tsx scripts/playbook-dryrun.ts --validate",
     "test:coverage": "vitest run --coverage",
     "contract:audit": "tsx src/cli/contract-audit.ts",
-    "contract:webhook": "tsx src/webhook/server.ts"
+    "contract:webhook": "tsx src/webhook/server.ts",
+    "orchestrator:status": "tsx src/cli/status.ts",
+    "orchestrator:loop": "tsx src/cli/loop.ts"
   },
   "dependencies": {
-    "@linear/sdk": "^39.0.0"
+    "@linear/sdk": "^39.0.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",

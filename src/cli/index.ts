@@ -1,13 +1,12 @@
 /**
- * CLI surface for the orchestrator (PAP-96/PAP-22: `paperos create`,
- * `pnpm contract:audit`, `pnpm linear:promote`).
+ * CLI surface for the orchestrator.
  *
- * Stub only. `ops/linear/configure-workspace.ts` is the one CLI entrypoint
- * PAP-91 ships; the others land with their own issues.
+ * * `pnpm linear:configure` — PAP-91, `ops/linear/configure-workspace.ts`
+ * * `pnpm orchestrator:status` — PAP-281, `src/cli/status.ts`
+ * * `pnpm orchestrator:loop` — PAP-281, `src/cli/loop.ts`
+ * * `pnpm linear:promote` — PAP-691 (promotion pass)
+ * * `pnpm contract:audit` — PAP-93 (`src/cli/contract-audit.ts`)
+ * * `paperos create <app>` — PAP-22
  */
 
-// TODO(PAP-96): `pnpm linear:promote [--dry-run]`.
-// TODO(PAP-93): `pnpm contract:audit [--state Backlog]`.
-// TODO(PAP-22): `paperos create <app>` (reuses configure-workspace.ts against a new team).
-
-export {};
+export { main as statusMain } from "./status.js";
