@@ -335,9 +335,12 @@ async function noteNotClaimable(
   issue: IssueNode,
   reason: SkipReason,
 ): Promise<void> {
+  const labelled = issue.labels.nodes.some((l) => l.name === "Deferred");
   const body =
     reason === "deferred"
-      ? "not claimable: labelled `Deferred` (Execution Schedule v0.2). Left in Ready for Claude for PAP-93 to bounce; remove the label to make it claimable."
+      ? labelled
+        ? "not claimable: labelled `Deferred` (Execution Schedule v0.2). Left in Ready for Claude for PAP-93 to bounce; remove the label to make it claimable."
+        : "not claimable: the Goal carries a deferral note (Execution Schedule v0.2). Left in Ready for Claude for PAP-93 to bounce; remove the note to make it claimable."
       : reason === "umbrella"
         ? "not claimable: this issue has sub-issues, so it is an umbrella (`UMBRELLA_NOT_CLAIMABLE`). Claim its children instead."
         : undefined;

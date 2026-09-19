@@ -49,6 +49,40 @@ describe("isDeferred", () => {
   it("is false for an ordinary issue", () => {
     expect(isDeferred(makeIssue())).toBe(false);
   });
+
+  it("catches the plan's deferral statements (sentence starting with Deferred)", () => {
+    for (const goal of [
+      "Deferred to v0.2 by the Execution Schedule (NJ-14 stop-loss 09-27 can reinstate). Not claimable before 10-01.",
+      "Deferred to v0.2 (past 2026-10-01): the brief names partners.",
+      "PAP-621 (hard). Deferred; nothing waits on it.",
+      "Ship the thing.\n\nDeferred to v0.2 by round 4 (not claimable before 2026-10-01).",
+    ]) {
+      expect(
+        isDeferred({ ...makeIssue(), description: `**Goal**\n\n${goal}\n\n**Scope**\n\nx` }),
+      ).toBe(true);
+    }
+  });
+
+  it("does not fire when Goal merely mentions the word (live false positives PAP-695, PAP-701)", () => {
+    for (const goal of [
+      "Initiatives are the Linear layer where eighteen projects become five lines with progress bars: the Oct 1 release, the deferred v0.2 set, and the brief's themes.",
+      "The pipeline's real questions (what is Ready and tightest on slack, what is deferred) have no saved answer.",
+      "Revenue recognition schedules: deferred revenue for prepaid periods.",
+    ]) {
+      expect(
+        isDeferred({ ...makeIssue(), description: `**Goal**\n\n${goal}\n\n**Scope**\n\nx` }),
+      ).toBe(false);
+    }
+  });
+
+  it("ignores a deferral statement outside the Goal section", () => {
+    const issue = {
+      ...makeIssue(),
+      description:
+        "**Goal**\n\nShip it.\n\n**Dependencies**\n\nPAP-1 (hard). Deferred; nothing waits on it.",
+    };
+    expect(isDeferred(issue)).toBe(false);
+  });
 });
 
 describe("isUmbrella", () => {
