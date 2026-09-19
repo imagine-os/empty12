@@ -1,0 +1,3 @@
+- docs(PAP-92): session playbook `docs/pm/session-playbook.md` (reading order, promotion/umbrella/deferred rules, claim..end steps, stop conditions, build-loop mode section, FAQ).
+- Comment templates `templates/session-{started,progress,ended}.md`, `templates/promoted.md`; footer schema `src/agents/session-footer.schema.json` and type `SessionFooter` / `PLAYBOOK_VERSION` in `src/agents/session-footer.ts`.
+- `pnpm playbook:dryrun` (offline toy session, three validated comments) and `pnpm footer:validate`; `tests/playbook.test.ts` (20 footer fixtures, word count, relative links). No ADR.

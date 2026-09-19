@@ -20,3 +20,11 @@ Append a section here for any MCP, CLI or API ability your issue adds
   in `src/linear/workspace.ts`. Consumers: PAP-93 (label/state ids), PAP-96
   (state ids for claims), PAP-99 (Character routing), PAP-22 (`paperos
   create` reuses the script).
+
+## PAP-92 session playbook (CLI)
+
+| Ability | Surface | Command | Notes |
+|---|---|---|---|
+| Playbook dry run | CLI | `pnpm playbook:dryrun` | Offline toy session for `PAP-9999`: renders `Session started`, `progress`, `Session ended` from `templates/` and validates each footer against `src/agents/session-footer.schema.json`. Writes nothing to Linear. |
+| Footer validation | CLI | `pnpm footer:validate [file.json ...]` | Validates footers (files or the built-in toy fixtures) with ajv; prints `ok <name>` per footer, exit 1 on any failure. |
+| Footer schema and type | Library | `src/agents/session-footer.ts` (`SessionFooter`, `PLAYBOOK_VERSION`, `parseFooter`, `renderFooter`) | Consumed by PAP-96 (state from footer), PAP-97/98 (`status`, `costUsd`), PAP-105 (templates). |
