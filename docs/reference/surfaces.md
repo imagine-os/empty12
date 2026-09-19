@@ -81,3 +81,16 @@ Append a section here for any MCP, CLI or API ability your issue adds
   pr.detected | loop.error | loop.cycle`), and the tables `sessions`,
   `claims`, `events`, `comments_sent`, `promotions`, `retries`.
 * **MCP**: none added by this issue.
+## PAP-94 Needs Justin queue (CLI + library)
+
+| Ability | Surface | Command / call | Notes |
+|---|---|---|---|
+| List the queue | CLI | `pnpm justin:queue list` | Read-only over the live team: every issue in `Needs Justin`, the decision card parsed from its description or comments, open asks, age against the 48 h default window, and any reply from an authorised author. Queries only, no mutation. Needs the sandbox proxy env (`NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`), like every Linear script here. |
+| Audit the invariants | CLI | `pnpm justin:queue list --check` | Adds the invariants: at most `maxOpen` (5) open cards, no two cards sharing a `key`, every card carrying a `paperos-card` block, nothing silently past its window. Exit 1 on an error, 0 with warnings. |
+| Machine-readable queue | CLI | `pnpm justin:queue list --json` | Same rows plus errors/warnings as JSON; the input the 14:00 UTC digest will render. |
+| Propose a decision card | Library | `requestDecision(card, queue, now)` / `admit()` in `src/justin-queue/` | Returns `admitted` \| `queued` (cap, `queued-for-justin`) \| `deduped` (same `key`) \| `refused` (`NOT_A_HUMAN_DECISION`, `BELOW_SPEND_THRESHOLD`, `TOO_MANY_ASKS`, `NO_DEFAULT`, `INVALID_CARD`). Pure; the Linear writes are PAP-96's. |
+| Free a slot | Library | `admitNext(queue)`, `slotsUsed(queue)` | Admits waiting cards by priority then age, up to the cap. |
+| Parse Justin's reply | Library | `parseReply(text, { author })`, `decisionFromStateChange(state)` | `/approve`, `/approve option <n>`, `/reject <reason>`, `/option <n>`, `/defer <n>d`, `/ask: <q>`, `PAP-25: approve` pairs and `NJ-2.3: approve` per-ask answers; regex plus a one-typo budget, authorised authors only. |
+| Apply a reply | Library | `applyReply(entry, reply, now)` | New queue entry, acknowledgement text and the Linear state to move to. Pure. |
+| Silence handling | Library | `defaults(queue, now)`, `applyDefault()`, `defaultAppliesAt(card)` | `apply-default` after 48 h, `hold` for a hard block (never auto-applies), `wait` with the nudge flag. |
+| Card schema and rendering | Library | `DecisionCardSchema` (Zod), `renderCard(card)`, `parseCardBlock(comment)` | `templates/needs-justin-card.md` plus the fenced `paperos-card` block that reads back. Policy: `docs/pm/justin-queue.md`. |
